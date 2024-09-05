@@ -1,0 +1,3 @@
+COLL_PATH=$1
+TOKENIZER=$2
+python3 dict_cons.py "$COLL_PATH" "$TOKENIZER"
