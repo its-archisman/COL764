@@ -3,25 +3,28 @@ from collections import Counter, defaultdict
 from time import time
 import utils
 import numpy as np
+import math
 
-DELIMITERS = [' ', ',', '.', ':', ';', '"', "'"]
+
 MEW_DIRICHLET = 1000
 
 def tokenize_and_map(text):
-    return Counter(utils.split_string_delimiters(text, DELIMITERS))
+    return Counter(utils.split_string_delimiters(text))
 
 def cal_prob(term, coll_freq_map, doc_freq_map, corpus_size, doc_size):
-    p_coll_term = coll_freq_map[term]/corpus_size
+    p_coll_term = coll_freq_map.get(term, 0)/corpus_size
     freq_term_doc = doc_freq_map[term]
     return (freq_term_doc + MEW_DIRICHLET * p_coll_term)/(doc_size + MEW_DIRICHLET)
 
 def get_query_doc_score(query_text, doc_text, coll_freq_map, corpus_size):
-    split_query_text = utils.split_string_delimiters(query_text, DELIMITERS)
+    split_query_text = utils.split_string_delimiters(query_text)
     doc_freq_map = tokenize_and_map(doc_text)
     doc_size = len(doc_text)
     score = 0
     for term in split_query_text:
-        score += np.log(cal_prob(term, coll_freq_map, doc_freq_map, corpus_size, doc_size))
+        prob = cal_prob(term, coll_freq_map, doc_freq_map, corpus_size, doc_size)
+        if prob:
+            score += math.log(prob)
     return score
 
 def get_reranked_results(query_docs_dict, required_docs_dict, lm_path):
@@ -36,6 +39,7 @@ def get_reranked_results(query_docs_dict, required_docs_dict, lm_path):
             score = get_query_doc_score(tup[0], doc_text, coll_freq_map, corpus_size)
             score_list.append([score, query_id, doc_id])
         score_list.sort()
+        score_list.reverse()
         for i, score in enumerate(score_list):
             score.append(i + 1)
         results.extend(score_list)

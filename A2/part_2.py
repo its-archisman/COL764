@@ -7,8 +7,6 @@ import numpy as np
 import utils
 import part_0 as rerank_utils
 
-CONTEXT_SIZE = 5
-EPOCHS = 100
 EXPANSIONS = 10
 
 model_w2v_path = 'data/word2vec.300d.txt'
@@ -33,7 +31,7 @@ def get_vocab_and_embedding(file_path, model_type):
     return vocab, embedding_dict
 
 
-def get_expanded_query_pretrained(query_id, query_tuple, required_docs_dict, expansions_file_path, model_type):
+def get_expanded_query_pretrained(query_id, query_tuple, required_docs_dict, expansions_file, model_type):
     query_text = query_tuple[0]
     docs_retrieved = query_tuple[1]
 
@@ -50,21 +48,18 @@ def get_expanded_query_pretrained(query_id, query_tuple, required_docs_dict, exp
     query_split = utils.split_string_delimiters(query_text)
     q = np.array([[1] if term in query_split else [0] for term in vocab])
     U = np.array(embeddings_list)
-    vector = np.dot(np.dot(U.T, U), q).flatten()
+    vector = np.dot(U, np.dot(U.T, q)).flatten()
     sorted_indices = np.argsort(vector)
-    top_indices = sorted_indices[-EXPANSIONS:][::-1]
+    top_indices = [i for i in sorted_indices if vocab[i] not in query_split][-EXPANSIONS:][::-1]
 
-    word_expansions = [query_text[i] for i in top_indices]
-    expansions_file = open(expansions_file_path, 'w')
+    word_expansions = [vocab[i] for i in top_indices]
     utils.write_expansions_to_file(query_id, word_expansions, expansions_file)
     
-    query_text_new = query_text + ' '.join(word_expansions)
+    query_text_new = query_text + ' ' + ' '.join(word_expansions)
     return query_text_new
 
 def main():
-    # two models to be implemented. Better if there is no main method
-    # Similar to the previous part. Here, the embeddings to be read from file
-
+    print("Running")
     query_path = sys.argv[1]
     top100_path = sys.argv[2]
     coll_path = sys.argv[3]
@@ -72,7 +67,7 @@ def main():
     expansions_file_path = sys.argv[5]
     model_type = sys.argv[6]
 
-
+    expansions_file = open(expansions_file_path, 'w')
     if not os.path.isfile(lm_path):
         rerank_utils.train_query_translation_model(query_path, top100_path, coll_path, lm_path)
 
@@ -81,11 +76,13 @@ def main():
 
     for query_id in query_docs_dict:
         query_text_new = get_expanded_query_pretrained(query_id, query_docs_dict[query_id], required_docs_dict, 
-                                            expansions_file_path, model_type)
+                                            expansions_file, model_type)
         query_docs_dict[query_id][0] = query_text_new
-        break
     reranked_results = rerank_utils.get_reranked_results(query_docs_dict, required_docs_dict, lm_path)
     utils.write_results_to_file(reranked_results, out_file_path)
+
+    expansions_file.close()
+    print("Done")
 
 if __name__ == '__main__':
     main()

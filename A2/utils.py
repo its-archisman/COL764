@@ -12,7 +12,7 @@ STOPWORDS = ["i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you",
  "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", 
  "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", 
  "don", "should", "now"]
-DELIMITERS = [' ', ',', '.', ':', ';', '"', "'"]
+DELIMITERS = set(['.', ' ', ':', ';', '"', "'", '.', '?', '!', ',', '\n', '~', '`', '(', ')', '/', '#', '*', '%', '+', '-', '[', ']', '{', '}', '@', '^', '<', '>'])
 
 def split_string_delimiters(s, delimiters=DELIMITERS):
     result = []
@@ -81,7 +81,7 @@ def get_query_results(query_path, top100_path):
     next(query_file)
     for row in query_file:
         row = row.strip().split('\t')
-        index_dict[int(row[0])] = (row[1], [])
+        index_dict[int(row[0])] = [row[1], []]
 
     next(top100_docs_file)
     for row in top100_docs_file:
@@ -112,7 +112,7 @@ def get_map_from_file(path):
     coll_freq_map = {}
     with open(path, 'r') as file:
         for line in file:
-            word, freq = line.strip().split('\t')
+            word, freq = line.strip().split(':')
             coll_freq_map[word] = int(freq)
     return coll_freq_map
 
