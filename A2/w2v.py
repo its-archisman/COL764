@@ -1,21 +1,12 @@
-"""
-Implementation of Skip-gram with Negative Sampling from scratch
 
-Author: Hang LE
-Email: hangtp.le@gmail.com
-"""
-# from __future__ import division
-import pandas as pd
+from __future__ import division
+# import pandas as pd
 
 # useful stuff
 import numpy as np
 import pickle # to save and load the model
 import os # to join the path
 import time # to record time for the report
-import matplotlib # to plot the loss of experiments for the report
-# matplotlib.use('TkAgg') # macOS
-matplotlib.use("agg")   # Linux
-import matplotlib.pyplot as plt
 
 import utils
 
@@ -64,17 +55,17 @@ def text2sentences_v2(l):
 
     return sentences
 
-def loadPairs(path):
-    """
-    Function to load test data
+# def loadPairs(path):
+#     """
+#     Function to load test data
 
-    - Input: path to test file
-    - Output: pairs of word1, word2 and pre-annotated similarity 
-    """
-    data = pd.read_csv(path, delimiter=',')
-    pairs = zip(data['word1'], data['word2'], data['similarity'])
+#     - Input: path to test file
+#     - Output: pairs of word1, word2 and pre-annotated similarity 
+#     """
+#     data = pd.read_csv(path, delimiter=',')
+#     pairs = zip(data['word1'], data['word2'], data['similarity'])
 
-    return pairs
+#     return pairs
 
 def sigmoid(x):
     """
@@ -337,10 +328,10 @@ class SkipGram:
 
             np.save(fname + '.npy', losses)
             # Plot the loss and save for report
-            plt.xlabel('epoch')
-            plt.xlabel('loss')
-            plt.plot(losses, 'r-')
-            plt.savefig(fname + '.png')
+            # plt.xlabel('epoch')
+            # plt.xlabel('loss')
+            # plt.plot(losses, 'r-')
+            # plt.savefig(fname + '.png')
 
             if epochs_no_improvement >= patience:
                 print('EARLY STOPPING.')
@@ -408,39 +399,17 @@ class SkipGram:
         idx = self.word2idx.get(word, 0)
         return self.W[:, idx]
 
-def run(text: str, model, vocab_path, test=False, validate=False, nEmbed=100, negativeRate=5, winSize=5, minCount=2, stepsize=0.001, epochs=50, patience=5):
+def run(text: str, model, vocab_path, nEmbed=100, negativeRate=5, winSize=5, minCount=2, stepsize=0.001, epochs=50, patience=5):
     vocab = []
-    if not test:
-        if not validate:
-            print('Read text to sentences')
-            start = time.time()
-            sentences = text2sentences_v2(text)
-            print('Took', time.time() - start, '(s). Total', len(sentences), 'sentences.')
-            # print(sentences)
-            sg = SkipGram(sentences, nEmbed, negativeRate, winSize, minCount)
-            print('Start training')
-            start = time.time()
-            vocab = sg.train(stepsize=stepsize, epochs=epochs, patience=patience, save_model_path=model)
-            print('Total training time:', time.time() - start, '(s)')
-            sg.save(model) # It is safer to save the model during training
-        else:
-            print('Validation mode')
-            data = pd.read_csv(text, delimiter='\t')
-            pairs = zip(data['word1'], data['word2'])
-            sim_gt = data['similarity'].values
-
-            sg = SkipGram.load(model)
-            sim_predicted = np.zeros(sim_gt.shape)
-            for idx, (a,b) in enumerate(pairs):
-                if (idx+1)%100 == 0:
-                    print(idx + 1, '/', len(sim_predicted))
-                sim_predicted[idx] = sg.similarity(a,b)
-            # Compute cross-correlation
-            corr = np.corrcoef(sim_gt, sim_predicted)
-            print('correlation:', corr)
-    else:
-        pairs = loadPairs(text)
-        sg = SkipGram.load(model)
-        for a,b,_ in pairs:
-            print(a, b, sg.similarity(a,b))
+    print('Read text to sentences')
+    start = time.time()
+    sentences = text2sentences_v2(text)
+    print('Took', time.time() - start, '(s). Total', len(sentences), 'sentences.')
+    # print(sentences)
+    sg = SkipGram(sentences, nEmbed, negativeRate, winSize, minCount)
+    print('Start training')
+    start = time.time()
+    vocab = sg.train(stepsize=stepsize, epochs=epochs, patience=patience, save_model_path=model)
+    print('Total training time:', time.time() - start, '(s)')
+    sg.save(model) # It is safer to save the model during training
     utils.write_words_to_file(vocab, vocab_path)

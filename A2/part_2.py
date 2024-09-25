@@ -9,8 +9,6 @@ import part_0 as rerank_utils
 
 EXPANSIONS = 10
 
-model_w2v_path = 'data/word2vec.300d.txt'
-model_glove_path = 'data/glove.6B.300d.txt'
 models_dir = 'models'
 lm_path = models_dir + '/qt_model'
 
@@ -24,6 +22,8 @@ def get_vocab_and_embedding(file_path, model_type):
 
     for row in file:
         row_split = row.split()
+        if not row_split:
+            continue
         vocab.append(row_split[0])
         embedding = [float(st) for st in row_split[1:]]
         embedding_dict[row_split[0]] = embedding
@@ -31,13 +31,11 @@ def get_vocab_and_embedding(file_path, model_type):
     return vocab, embedding_dict
 
 
-def get_expanded_query_pretrained(query_id, query_tuple, required_docs_dict, expansions_file, model_type):
+def get_expanded_query_pretrained(query_id, query_tuple, required_docs_dict, expansions_file, embedding_path, model_type):
     query_text = query_tuple[0]
     docs_retrieved = query_tuple[1]
 
-    model_path = model_w2v_path
-    if model_type == 'glove':
-        model_path = model_glove_path
+    model_path = embedding_path
 
     combined_docs_text = ' '.join([required_docs_dict[key] for key in docs_retrieved])
     combined_docs_text = utils.process_text(combined_docs_text)
@@ -63,9 +61,10 @@ def main():
     query_path = sys.argv[1]
     top100_path = sys.argv[2]
     coll_path = sys.argv[3]
-    out_file_path = sys.argv[4]
-    expansions_file_path = sys.argv[5]
-    model_type = sys.argv[6]
+    embedding_path = sys.argv[4]
+    out_file_path = sys.argv[5]
+    expansions_file_path = sys.argv[6]
+    model_type = sys.argv[7]
 
     expansions_file = open(expansions_file_path, 'w')
     if not os.path.isfile(lm_path):
@@ -76,7 +75,7 @@ def main():
 
     for query_id in query_docs_dict:
         query_text_new = get_expanded_query_pretrained(query_id, query_docs_dict[query_id], required_docs_dict, 
-                                            expansions_file, model_type)
+                                            expansions_file, embedding_path, model_type)
         query_docs_dict[query_id][0] = query_text_new
     reranked_results = rerank_utils.get_reranked_results(query_docs_dict, required_docs_dict, lm_path)
     utils.write_results_to_file(reranked_results, out_file_path)

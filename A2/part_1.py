@@ -9,11 +9,12 @@ import utils
 import w2v
 import part_0 as rerank_utils
 
-CONTEXT_SIZE = 5
-EPOCHS = 100
 EXPANSIONS = 10
 
-def get_expanded_query(query_id, query_tuple, required_docs_dict, expansions_file, models_dir):
+models_dir = 'models'
+lm_path = models_dir + '/qt_model'
+
+def get_expanded_query(query_id, query_tuple, required_docs_dict, expansions_file):
     query_text = query_tuple[0]
     docs_retrieved = query_tuple[1]
 
@@ -53,10 +54,7 @@ def main():
     out_file_path = sys.argv[4]
     expansions_file_path = sys.argv[5]
 
-    models_dir = 'models'
-    lm_path = models_dir + '/qt_model'
     expansions_file = open(expansions_file_path, 'w')
-
 
     if not os.path.isfile(lm_path):
         rerank_utils.train_query_translation_model(query_path, top100_path, coll_path, lm_path)
@@ -65,7 +63,7 @@ def main():
     required_docs_dict = utils.get_docs_dict_from_queries(query_docs_dict, coll_path)
     for query_id in query_docs_dict:
         query_text_new = get_expanded_query(query_id, query_docs_dict[query_id], required_docs_dict, 
-                                            expansions_file, models_dir)
+                                            expansions_file)
         query_docs_dict[query_id][0] = query_text_new
 
     reranked_results = rerank_utils.get_reranked_results(query_docs_dict, required_docs_dict, lm_path)
