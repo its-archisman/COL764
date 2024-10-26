@@ -1,0 +1,8 @@
+kernel: linear
+C: 1.0
+epsilon: 0.001
+degree: 3
+tol: 1e-3
+max_iter: 1000
+shrinking: false
+gamma: auto
